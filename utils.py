@@ -20,7 +20,8 @@ class SudokuGrid():
         self.areas += [[total * i + j for i in range(total)] for j in range(total)]
         if segments:
             assert len(segments) == total, f'Expected exactly {total} segments'
-            assert all([len(s) == total for s in segments]), f'Every segment must contain exactly {total} cells'
+            assert all([len(s) == total for s in segments]), \
+                f'Every segment must contain exactly {total} cells'
             idx = [[total * x[0] + x[1] for x in s] for s in segments]
             assert sorted(sum(idx, [])) == [_ for _ in range(total ** 2)], \
                 'All the segments must cover the entire grid'
@@ -43,13 +44,14 @@ class SudokuGrid():
 
     def __repr__(self) -> str:
         mx = max(len(x) for x in self.grid) + 1
+        d = self.dimensions[0]
         rows = []
-        for i in range(self.dimensions[0]):
+        for i in range(d):
             vals = []
-            for j in range(self.dimensions[0]):
-                vals += [''.join(str(x) for x in sorted(self.grid[i * self.dimensions[0] + j])).rjust(mx)]
+            for j in range(d):
+                vals += [''.join(str(x) for x in sorted(self.grid[i * d + j])).rjust(mx)]
             rows.append('|'.join(vals))
-            rows.append('-' * (mx * self.dimensions[0] + self.dimensions[0] - 1))
+            rows.append('-' * ((mx + 1) * d - 1))
         return '\n'.join(rows)
     
     @property
@@ -123,18 +125,31 @@ class SudokuSolver():
                     self.grid.simplify()
 
 if __name__ == '__main__':
-    board = [
-        ['3', '4', '5', '.', '.', '.', '.', '.', '.'], 
-        ['.', '.', '6', '.', '.', '1', '.', '.', '.'], 
-        ['8', '.', '1', '.', '7', '.', '2', '.', '.'], 
-        ['.', '.', '3', '.', '.', '8', '.', '.', '.'], 
-        ['6', '.', '.', '.', '.', '.', '.', '5', '.'], 
-        ['.', '.', '4', '1', '9', '.', '6', '.', '.'], 
-        ['.', '.', '.', '6', '.', '5', '1', '.', '3'], 
-        ['.', '.', '.', '.', '.', '.', '7', '.', '.'], 
-        ['.', '.', '.', '.', '.', '4', '.', '.', '.']
-        ]
-    sl = SudokuSolver((3, 3), board)
-    print(sl.grid, '\n')
-    sl.solve()
-    print(sl.grid)
+    boards = [
+        [
+            ['3', '4', '5', '.', '.', '.', '.', '.', '.'], 
+            ['.', '.', '6', '.', '.', '1', '.', '.', '.'], 
+            ['8', '.', '1', '.', '7', '.', '2', '.', '.'], 
+            ['.', '.', '3', '.', '.', '8', '.', '.', '.'], 
+            ['6', '.', '.', '.', '.', '.', '.', '5', '.'], 
+            ['.', '.', '4', '1', '9', '.', '6', '.', '.'], 
+            ['.', '.', '.', '6', '.', '5', '1', '.', '3'], 
+            ['.', '.', '.', '.', '.', '.', '7', '.', '.'], 
+            ['.', '.', '.', '.', '.', '4', '.', '.', '.']
+            ],
+        [
+            ['4', '.', '.', '.', '.', '.', '.', '1', '.'], 
+            ['.', '7', '.', '.', '.', '.', '.', '.', '.'], 
+            ['.', '.', '1', '.', '6', '.', '.', '3', '.'], 
+            ['2', '.', '6', '8', '.', '.', '1', '4', '.'], 
+            ['.', '3', '9', '4', '.', '.', '2', '.', '.'], 
+            ['.', '.', '.', '.', '7', '.', '.', '9', '3'], 
+            ['.', '.', '.', '.', '.', '8', '4', '2', '.'], 
+            ['3', '.', '.', '.', '.', '.', '.', '8', '9'], 
+            ['8', '.', '4', '.', '.', '2', '.', '.', '1']
+        ],
+    ]
+    for board in boards:
+        sl = SudokuSolver((3, 3), board)
+        sl.solve()
+        print(sl.grid, '\n')
