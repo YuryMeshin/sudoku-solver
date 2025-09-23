@@ -114,9 +114,13 @@ class SudokuSolver():
                         new_grid.set_values(row, col, set([v]))
                         new_grid.simplify()
                         if new_grid.is_valid:
+                            if all(new_grid.defined):
+                                self.board = new_grid
+                                return
                             good_set |= {v}
                     self.board.set_values(row, col, good_set)
                     self.board.simplify()
+                    # print(repr(self.board), '\n')
 
 if __name__ == '__main__':
     boards = [
