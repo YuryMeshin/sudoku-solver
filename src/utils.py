@@ -1,57 +1,49 @@
-from typing import Optional
+def int2set(val: int, bits: int) -> set[int]:
+    return set([i + 1 for i in range(bits) if val & (1 << i)])
+
+
+def map_index(coeffs: list[int], indices: list[int]) -> int:
+    assert len(coeffs) == len(indices), 'Given coeffs and indices size do not match'
+    index = 0
+    for i in range(len(coeffs)):
+        index += coeffs[i] * indices[i]
+    return index
+
 
 class SudokuGrid():
     '''
-    Sudoku grid with m*n unique elements and user defined segmentation \n
-    If segmentation is undefined then standard block structure would be applied
+    Sudoku grid with m x n block structure
     '''
 
-    def __init__(self, m: int = 3, n: int = 3, segments: Optional[list[list[list[int]]]] = None):
-
-        def get_subset(i: int) -> set[int]:
-            bits = '{:9b}'.format(i)
-            return set([_ + 1 for _ in range(9) if bits[_] == '1'])
+    def __init__(self, m: int = 3, n: int = 3):
 
         total = m * n
         self.dimensions = (total, total)
         self.values = [_ for _ in range(1, total + 1)]
         self.grid = [set(self.values) for _ in range(total ** 2)]
-        self.areas = [[total * i + j for j in range(total)] for i in range(total)]
-        self.areas += [[total * i + j for i in range(total)] for j in range(total)]
-        if segments:
-            assert len(segments) == total, f'Expected exactly {total} segments'
-            assert all([len(s) == total for s in segments]), \
-                f'Every segment must contain exactly {total} cells'
-            idx = [[total * x[0] + x[1] for x in s] for s in segments]
-            assert sorted(sum(idx, [])) == [_ for _ in range(total ** 2)], \
-                'All the segments must cover the entire grid'
-            self.areas += idx
-        else:
-            self.areas += [[total * m * i + n * j + total * r + s for r in range(m) for s in range(n)]  \
-                           for i in range(n) for j in range(m)]
-        self.subsets = {i: get_subset(i) for i in range(1, 2 ** total)}
+        self.areas = [[map_index([total, 1], [i, j]) for j in range(total)] for i in range(total)]
+        self.areas += [[map_index([total, 1], [i, j]) for i in range(total)] for j in range(total)]
+        self.areas += [[map_index([total * m, n, total, 1], [i, j, r, s]) for r in range(m) for s in range(n)] for i in range(n) for j in range(m)]
+        self.subsets = {i: int2set(i, total) for i in range(1, 1 << total)}
     
     def __str__(self) -> str:
 
         def show_value(val: set[int]) -> str:
-            if len(val) == 1:
-                return str(list(val)[0])
-            return '·'
+            return str(list(val)[0]) if len(val) == 1 else '·'
         
         rows = self.dimensions[0]
-        return '\n'.join([' '.join([show_value(self.grid[rows * i + j]) for j in range(rows)]) \
-                          for i in range(rows)])
+        return '\n'.join([' '.join([show_value(self.grid[map_index([rows, 1], [i, j])]) for j in range(rows)]) for i in range(rows)])
 
     def __repr__(self) -> str:
         mx = max(len(x) for x in self.grid) + 1
         d = self.dimensions[0]
-        rows = []
+        rows = ['-' * ((mx + 1) * d + 1)]
         for i in range(d):
-            vals = []
+            vals = ['']
             for j in range(d):
-                vals += [''.join(str(x) for x in sorted(self.grid[i * d + j])).rjust(mx)]
-            rows.append('|'.join(vals))
-            rows.append('-' * ((mx + 1) * d - 1))
+                vals += [''.join(str(x) for x in sorted(self.grid[map_index([d, 1], [i, j])])).rjust(mx)]
+            rows.append('|'.join(vals) + '|')
+            rows.append('-' * ((mx + 1) * d + 1))
         return '\n'.join(rows)
     
     @property
@@ -93,13 +85,10 @@ class SudokuGrid():
 class SudokuSolver():
     '''Nuff said, just Sudoku solver'''
 
-    def __init__(self, shape: tuple[int, int], board: list[list[str]], \
-                 segments: Optional[list[list[list[int]]]] = None):
-        assert len(board) == shape[0] * shape[1], \
-            "Given board rows count doesn't match to dimensions"
-        assert all([len(b) == shape[0] * shape[1] for b in board]), \
-            "Given board columns count doesn't match to dimensions"
-        self.grid = SudokuGrid(shape[0], shape[1], segments)
+    def __init__(self, shape: tuple[int, int], board: list[list[str]]):
+        assert len(board) == shape[0] * shape[1], 'Given board rows count does not match to dimensions'
+        assert all([len(b) == shape[0] * shape[1] for b in board]), 'Given board columns count does not match to dimensions'
+        self.grid = SudokuGrid(shape[0], shape[1])
         for i in range(self.grid.dimensions[0]):
             for j in range(self.grid.dimensions[0]):
                 if board[i][j] != '.':
@@ -152,4 +141,4 @@ if __name__ == '__main__':
     for board in boards:
         sl = SudokuSolver((3, 3), board)
         sl.solve()
-        print(sl.grid, '\n')
+        print(repr(sl.grid), '\n')
