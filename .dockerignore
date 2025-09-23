@@ -85,3 +85,7 @@ tests/
 .github/
 pytest.ini
 .pre-push-config.yaml
+
+# Docker build files (optional)
+Dockerfile
+.dockerignore

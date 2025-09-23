@@ -1,3 +1,4 @@
+import os
 from flask import Flask, render_template, request, redirect, url_for
 from src.solver import SudokuGrid, SudokuSolver
 
@@ -39,13 +40,7 @@ def grid():
     
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8000, debug=True)
-# 345......
-# ..6..1...
-# 8.1.7.2..
-# ..3..8...
-# 6......5.
-# ..419.6..
-# ...6.51.3
-# ......7..
-# .....4...
+    if all(var in os.environ for var in ["FLASK_APP", "FLASK_RUN_HOST", "FLASK_RUN_PORT", "FLASK_ENV"]):
+        app.run(debug=True)
+    else:
+        app.run(host="0.0.0.0", port=8000, debug=True)
