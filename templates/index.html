@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sudoku Solver</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>Choose Sudoku Dimensions</h1>
+    <form method="POST">
+        <select name="dimension" class="select-dimension">
+            {% for dim in dimensions %}
+            <option value="{{ dim }}">{{ dim }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn-submit">Next</button>
+    </form>
+</body>
+</html>

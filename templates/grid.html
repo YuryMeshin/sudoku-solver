@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sudoku Solver</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>Sudoku {{ dimension }}</h1>
+    {% if message %}<p style="color:red;">{{ message }}</p>{% endif %}
+    <form method="POST">
+        <table>
+            {% set m, n = dimension.split('x') | map('int') %}
+            {% for i in range(board|length) %}
+                {% if i % (m*n) == 0 %}<tr>{% endif %}
+
+                {% set row = i // (m*n) %}
+                {% set col = i % (m*n) %}
+
+                {# Base class: original or solver-filled #}
+                {% if original[i] != '' %}
+                    {% set cell_class = 'initial' %}
+                {% else %}
+                    {% set cell_class = 'solver-filled' %}
+                {% endif %}
+
+                {# Alternating block background #}
+                {% if ((row // m + col // n) % 2 == 0) %}
+                    {% set cell_class = cell_class + ' block-light' %}
+                {% endif %}
+
+                {# Thick borders for blocks and edges #}
+                {% if row % m == 0 %} {% set cell_class = cell_class + ' border-top' %} {% endif %}
+                {% if row == m*n -1 %} {% set cell_class = cell_class + ' border-bottom' %} {% endif %}
+                {% if col % n == 0 %} {% set cell_class = cell_class + ' border-left' %} {% endif %}
+                {% if col == m*n -1 %} {% set cell_class = cell_class + ' border-right' %} {% endif %}
+
+                <td class="{{ cell_class }}">
+                    <input type="text" name="cell" value="{{ board[i] }}" maxlength="1"
+                           {% if solved and original[i]=='' %}readonly{% endif %}>
+                </td>
+
+                {% if (i+1) % (m*n) == 0 %}</tr>{% endif %}
+            {% endfor %}
+        </table>
+        <button type="submit" class="btn-submit">Find Solution</button>
+    </form>
+    <a href="{{ url_for('index') }}" class="back-link">Back</a>
+</body>
+</html>
