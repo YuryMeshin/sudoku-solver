@@ -89,8 +89,13 @@ class SudokuGrid():
             if new_options == options:
                 break
             options = new_options
-
-
+    
+    def flatten(self) -> str:
+        if all(self.defined):
+            return ''.join([str(list(cell)[0]) for cell in self.grid])
+        else:
+            return ''
+        
 class SudokuSolver():
     ''' Nuff said, just Sudoku solver '''
 
