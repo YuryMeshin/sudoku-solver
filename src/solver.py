@@ -98,25 +98,25 @@ class SudokuSolver():
 
     def __init__(self, shape: tuple[int, int], board: str):
         self.block_shape = shape
-        self.grid = SudokuGrid.read_board(shape, board)
+        self.board = SudokuGrid.read_board(shape, board)
     
     def solve(self):
-        self.grid.simplify()
-        while not all(self.grid.defined):
-            for idx in range(len(self.grid.grid)):
-                if self.grid.defined[idx] == False:
-                    row, col = idx // self.grid.dimensions[0], idx % self.grid.dimensions[0]
+        self.board.simplify()
+        while not all(self.board.defined):
+            for idx in range(len(self.board.grid)):
+                if self.board.defined[idx] == False:
+                    row, col = idx // self.board.dimensions[0], idx % self.board.dimensions[0]
                     good_set = set()
-                    for v in self.grid.grid[idx]:
+                    for v in self.board.grid[idx]:
                         new_grid = SudokuGrid(self.block_shape[0], self.block_shape[1])
-                        for i in range(len(self.grid.grid)):
-                            new_grid.grid[i] = self.grid.grid[i].copy()
+                        for i in range(len(self.board.grid)):
+                            new_grid.grid[i] = self.board.grid[i].copy()
                         new_grid.set_values(row, col, set([v]))
                         new_grid.simplify()
                         if new_grid.is_valid:
                             good_set |= {v}
-                    self.grid.set_values(row, col, good_set)
-                    self.grid.simplify()
+                    self.board.set_values(row, col, good_set)
+                    self.board.simplify()
 
 if __name__ == '__main__':
     boards = [
@@ -126,6 +126,6 @@ if __name__ == '__main__':
     
     for board in boards:
         sl = SudokuSolver((3, 3), board)
-        print(sl.grid, '\n')
+        print(sl.board, '\n')
         sl.solve()
-        print(repr(sl.grid), '\n')
+        print(repr(sl.board), '\n')
