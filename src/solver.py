@@ -11,9 +11,7 @@ def map_index(coeffs: list[int], indices: list[int]) -> int:
 
 
 class SudokuGrid():
-    '''
-    Sudoku grid with m x n block structure
-    '''
+    ''' Sudoku grid with m x n block structure '''
 
     def __init__(self, m: int = 3, n: int = 3):
 
@@ -94,7 +92,7 @@ class SudokuGrid():
 
 
 class SudokuSolver():
-    '''Nuff said, just Sudoku solver'''
+    ''' Nuff said, just Sudoku solver '''
 
     def __init__(self, shape: tuple[int, int], board: str):
         self.block_shape = shape
@@ -120,16 +118,3 @@ class SudokuSolver():
                             good_set |= {v}
                     self.board.set_values(row, col, good_set)
                     self.board.simplify()
-                    # print(repr(self.board), '\n')
-
-if __name__ == '__main__':
-    boards = [
-        '345........6..1...8.1.7.2....3..8...6......5...419.6.....6.51.3......7.......4...', 
-        '4......1..7.........1.6..3.2.68..14..394..2......7..93.....842.3......898.4..2..1'
-        ]
-    
-    for board in boards:
-        sl = SudokuSolver((3, 3), board)
-        print(sl.board, '\n')
-        sl.solve()
-        print(repr(sl.board), '\n')
