@@ -75,6 +75,13 @@ Desktop.ini
 
 # Git metadata
 .git/
+.gitignore
 
 # Markdown files (ignore all .md files anywhere in the repo)
 **/*.md
+
+tests/
+.setup/
+.github/
+pytest.ini
+.pre-push-config.yaml
