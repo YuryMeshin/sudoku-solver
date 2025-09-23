@@ -45,6 +45,17 @@ class SudokuGrid():
             rows.append('|'.join(vals) + '|')
             rows.append('-' * ((mx + 1) * d + 1))
         return '\n'.join(rows)
+
+    @classmethod
+    def read_board(cls, shape: tuple[int, int], board: str):
+        assert len(board) == (shape[0] * shape[1]) ** 2, 'Given board does not match to dimensions'
+        grid = cls(shape[0], shape[1])
+        for i, val in enumerate(board):
+            if val != '.':
+                assert (int(val)) in grid.values, f'Given value {val} is out of range'
+                grid.set_values(i // grid.dimensions[0], i % grid.dimensions[0], set([int(val)]))
+        return grid
+        
     
     @property
     def defined(self) -> list[bool]:
@@ -85,15 +96,9 @@ class SudokuGrid():
 class SudokuSolver():
     '''Nuff said, just Sudoku solver'''
 
-    def __init__(self, shape: tuple[int, int], board: list[list[str]]):
-        assert len(board) == shape[0] * shape[1], 'Given board rows count does not match to dimensions'
-        assert all([len(b) == shape[0] * shape[1] for b in board]), 'Given board columns count does not match to dimensions'
-        self.grid = SudokuGrid(shape[0], shape[1])
-        for i in range(self.grid.dimensions[0]):
-            for j in range(self.grid.dimensions[0]):
-                if board[i][j] != '.':
-                    assert (val := int(board[i][j])) in self.grid.values, f'Given value {val} is out of range'
-                    self.grid.set_values(i, j, set([val]))
+    def __init__(self, shape: tuple[int, int], board: str):
+        self.block_shape = shape
+        self.grid = SudokuGrid.read_board(shape, board)
     
     def solve(self):
         self.grid.simplify()
@@ -103,7 +108,7 @@ class SudokuSolver():
                     row, col = idx // self.grid.dimensions[0], idx % self.grid.dimensions[0]
                     good_set = set()
                     for v in self.grid.grid[idx]:
-                        new_grid = SudokuGrid()
+                        new_grid = SudokuGrid(self.block_shape[0], self.block_shape[1])
                         for i in range(len(self.grid.grid)):
                             new_grid.grid[i] = self.grid.grid[i].copy()
                         new_grid.set_values(row, col, set([v]))
@@ -115,30 +120,12 @@ class SudokuSolver():
 
 if __name__ == '__main__':
     boards = [
-        [
-            ['3', '4', '5', '.', '.', '.', '.', '.', '.'], 
-            ['.', '.', '6', '.', '.', '1', '.', '.', '.'], 
-            ['8', '.', '1', '.', '7', '.', '2', '.', '.'], 
-            ['.', '.', '3', '.', '.', '8', '.', '.', '.'], 
-            ['6', '.', '.', '.', '.', '.', '.', '5', '.'], 
-            ['.', '.', '4', '1', '9', '.', '6', '.', '.'], 
-            ['.', '.', '.', '6', '.', '5', '1', '.', '3'], 
-            ['.', '.', '.', '.', '.', '.', '7', '.', '.'], 
-            ['.', '.', '.', '.', '.', '4', '.', '.', '.']
-            ],
-        [
-            ['4', '.', '.', '.', '.', '.', '.', '1', '.'], 
-            ['.', '7', '.', '.', '.', '.', '.', '.', '.'], 
-            ['.', '.', '1', '.', '6', '.', '.', '3', '.'], 
-            ['2', '.', '6', '8', '.', '.', '1', '4', '.'], 
-            ['.', '3', '9', '4', '.', '.', '2', '.', '.'], 
-            ['.', '.', '.', '.', '7', '.', '.', '9', '3'], 
-            ['.', '.', '.', '.', '.', '8', '4', '2', '.'], 
-            ['3', '.', '.', '.', '.', '.', '.', '8', '9'], 
-            ['8', '.', '4', '.', '.', '2', '.', '.', '1']
-        ],
-    ]
+        '345........6..1...8.1.7.2....3..8...6......5...419.6.....6.51.3......7.......4...', 
+        '4......1..7.........1.6..3.2.68..14..394..2......7..93.....842.3......898.4..2..1'
+        ]
+    
     for board in boards:
         sl = SudokuSolver((3, 3), board)
+        print(sl.grid, '\n')
         sl.solve()
         print(repr(sl.grid), '\n')
