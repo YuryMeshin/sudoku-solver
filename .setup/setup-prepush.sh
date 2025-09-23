@@ -6,7 +6,7 @@ PY_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.versi
 echo "Detected local Python version: $PY_VERSION"
 
 # Create .pre-commit-config.yaml
-cat > .pre-commit-config.yaml <<EOL
+cat > .pre-push-config.yaml <<EOL
 repos:
   - repo: local
     hooks:
@@ -23,7 +23,7 @@ repos:
         pass_filenames: false
 EOL
 
-echo ".pre-commit-config.yaml created."
+echo ".pre-push-config.yaml created."
 
 # Install pre-push hook
 pre-commit install --hook-type pre-push
