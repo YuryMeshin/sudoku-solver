@@ -1,0 +1,14 @@
+repos:
+  - repo: local
+    hooks:
+      - id: pytest-functional
+        name: Run functional tests
+        entry: python3.13 -m pytest tests/functional
+        language: system
+        pass_filenames: false
+
+      - id: pytest-unit
+        name: Run unit tests
+        entry: python3.13 -m pytest tests/unit
+        language: system
+        pass_filenames: false

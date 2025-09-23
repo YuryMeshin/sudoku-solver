@@ -1,0 +1,87 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Environments
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Docs
+docs/_build/
+site/
+
+# Tooling caches
+.mypy_cache/
+.ruff_cache/
+.pyre/
+.pytype/
+cython_debug/
+
+# Editors
+.vscode/
+.idea/
+.spyderproject
+.spyproject
+.ropeproject
+
+# OS files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Git metadata
+.git/
+.gitignore
+
+# Markdown files (ignore all .md files anywhere in the repo)
+**/*.md
+
+tests/
+.setup/
+.github/
+pytest.ini
+.pre-push-config.yaml

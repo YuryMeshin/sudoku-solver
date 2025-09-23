@@ -1,0 +1,33 @@
+name: Run Tests
+
+# Trigger workflow on push, pull request, or manual run
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:   # allows manual runs from GitHub
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout code
+      - uses: actions/checkout@v4
+
+      # Set up Python (match your local venv if needed)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3'
+
+      # Install dependencies in a virtual environment
+      - run: python -m venv venv
+      - run: . venv/bin/activate
+      - run: pip install -r requirements.txt
+
+      # Run functional tests first
+      - run: pytest tests/functional
+
+      # Run unit tests only if functional pass
+      - run: pytest tests/unit

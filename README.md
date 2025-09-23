@@ -1,2 +1,2 @@
-# sudoku-solver
-Sudoku solver. What else should be here?
+# Set up pre-push hook
+./setup/setup_prepush.sh
