@@ -1,12 +1,9 @@
 from typing import Optional
 from enum import Enum
 
-def int2set(val: int, bits: int) -> set[int]:
-    return set([i + 1 for i in range(bits) if val & (1 << i)])
-
 
 def map_index(coeffs: list[int], indices: list[int]) -> int:
-    assert len(coeffs) == len(indices), 'Given coeffs and indices size do not match'
+    assert len(coeffs) == len(indices), "Given coeffs and indices size do not match"
     index = 0
     for i in range(len(coeffs)):
         index += coeffs[i] * indices[i]
@@ -23,9 +20,9 @@ class GridCell():
     ''' Cell for sudoku grid'''
 
     def __init__(self, slots: int, value: Optional[int] = None):
-        assert 1 < slots < 17, f'{slots=} must be between 2 and 16 exclusively' 
+        assert 1 < slots < 17, f"{slots=} must be between 2 and 16 exclusively" 
         if value:
-            assert 0 <= value < (1 << slots), f'{value=} must be between 0 and {(1 << slots) - 1}'
+            assert 0 <= value < (1 << slots), f"{value=} must be between 0 and {(1 << slots) - 1}"
         self.slots = slots
         self.value = value if value else (1 << slots) - 1
 
@@ -34,7 +31,7 @@ class GridCell():
         return [i + 1 for i in range(self.slots) if self.value & (1 << i)]
 
     def __str__(self) -> str:
-        return ','.join([str(v) for v in self.options])
+        return ",".join([str(v) for v in self.options])
     
     @property
     def status(self) -> CellStatus:
@@ -51,7 +48,7 @@ class GridCell():
             yield v
     
     def check_mask(self, mask: int) -> bool:
-        assert 0 < mask < (1 << self.slots), f'Incorrect {mask=} given'
+        assert 0 < mask < (1 << self.slots), f"Incorrect {mask=} given"
         return (self.value & ~mask) == 0
 
 
@@ -72,33 +69,33 @@ class SudokuGrid():
 
         def show_value(cell: GridCell) -> str:
             match cell.status:
-                case CellStatus.EMPTY: return '#'
+                case CellStatus.EMPTY: return "#"
                 case CellStatus.DETERMINED: return str(cell)
-                case _: return '.'
+                case _: return "."
         
         rows = self.slots
-        return '\n'.join([' '.join([show_value(self.grid[map_index([rows, 1], [i, j])]) for j in range(rows)]) for i in range(rows)])
+        return "\n".join([" ".join([show_value(self.grid[map_index([rows, 1], [i, j])]) for j in range(rows)]) for i in range(rows)])
 
     def __repr__(self) -> str:
         cells = [str(cell) for cell in self.grid]
         mx = max(len(cell) for cell in cells)
-        rows = ['-' * ((mx + 1) * self.slots + 1)]
+        rows = ["-" * ((mx + 1) * self.slots + 1)]
         for i in range(self.slots):
-            vals = ['']
+            vals = [""]
             for j in range(self.slots):
                 vals.append(str(self.grid[map_index([self.slots, 1], [i, j])]).rjust(mx))
-            rows.append('|'.join(vals) + '|')
-            rows.append('-' * ((mx + 1) * self.slots + 1))
-        return '\n'.join(rows)
+            rows.append("|".join(vals) + "|")
+            rows.append("-" * ((mx + 1) * self.slots + 1))
+        return "\n".join(rows)
 
     @classmethod
     def read_board(cls, shape: tuple[int, int], board: str):
-        cells = board.split(',')
-        assert len(cells) == (shape[0] * shape[1]) ** 2, 'Given board does not match to dimensions'
+        cells = board.split(",")
+        assert len(cells) == (shape[0] * shape[1]) ** 2, "Given board does not match to dimensions"
         grid = cls(shape[0], shape[1])
         for i, val in enumerate(cells):
-            if val != '.':
-                assert 1 <= int(val) <= grid.slots, f'Given value {val} is out of range'
+            if val != ".":
+                assert 1 <= int(val) <= grid.slots, f"Given value {val} is out of range"
                 grid[i] = GridCell(grid.slots, 1 << (int(val) - 1))
         return grid
     
@@ -141,8 +138,9 @@ class SudokuGrid():
             options = new_options
     
     def flatten(self) -> str:
-        return ','.join([str(cell) if cell.status == CellStatus.DETERMINED else '.' for cell in self.grid])
-        
+        return ",".join([str(cell) if cell.status == CellStatus.DETERMINED else "." for cell in self.grid])
+
+     
 class SudokuSolver():
     ''' Nuff said, just Sudoku solver '''
 
@@ -167,8 +165,3 @@ class SudokuSolver():
                             value += 1 << (v - 1)
                     self.board[idx] = GridCell(self.board.slots, value)
                     self.board.simplify()
-
-if __name__ == '__main__':
-    sl = SudokuSolver((3, 3), "4,.,.,.,.,.,.,1,.,.,7,.,.,.,.,.,.,.,.,.,1,.,6,.,.,3,.,2,.,6,8,.,.,1,4,.,.,3,9,4,.,.,2,.,.,.,.,.,.,7,.,.,9,3,.,.,.,.,.,8,4,2,.,3,.,.,.,.,.,.,8,9,8,.,4,.,.,2,.,.,.")
-    sl.solve()
-    print(sl.board)
