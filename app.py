@@ -7,7 +7,7 @@ app = Flask(__name__)
 # Start page
 @app.route("/", methods=["GET", "POST"])
 def index():
-    dimensions = ["2x2", "2x3", "3x2", "3x3", "3x4", "4x3"]
+    dimensions = ["2x2", "2x3", "3x2", "3x3"]
     if request.method == "POST":
         dimension = request.form["dimension"]
         return redirect(url_for("grid", dimension=dimension))
@@ -24,12 +24,12 @@ def grid():
         # Collect board from form inputs
         cells = request.form.getlist("cell")
         original_cells = [c for c in cells]  # copy of what the user typed
-        board_str = "".join(c if c.isdigit() else "." for c in cells)
+        board_str = ",".join(c if c.isdigit() else "." for c in cells)
         solver = SudokuSolver((m, n), board_str)
         solver.solve()
         solution = solver.board.flatten()
         if solution:
-            return render_template("grid.html", dimension=dimension, board=solution, original=original_cells, solved=True)
+            return render_template("grid.html", dimension=dimension, board="".join(solution.split(",")), original=original_cells, solved=True)
         else:
             message = "No solution found!"
             return render_template("grid.html", dimension=dimension, board=cells, message=message)
