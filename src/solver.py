@@ -1,3 +1,6 @@
+from typing import Optional
+from enum import Enum
+
 def int2set(val: int, bits: int) -> set[int]:
     return set([i + 1 for i in range(bits) if val & (1 << i)])
 
@@ -10,91 +13,135 @@ def map_index(coeffs: list[int], indices: list[int]) -> int:
     return index
 
 
+class CellStatus(Enum):
+    EMPTY = 0
+    DETERMINED = 1
+    OPTIONAL = 2
+
+
+class GridCell():
+    ''' Cell for sudoku grid'''
+
+    def __init__(self, slots: int, value: Optional[int] = None):
+        assert 1 < slots < 17, f'{slots=} must be between 2 and 16 exclusively' 
+        if value:
+            assert 0 <= value < (1 << slots), f'{value=} must be between 0 and {(1 << slots) - 1}'
+        self.slots = slots
+        self.value = value if value else (1 << slots) - 1
+
+    @property
+    def options(self) -> list[int]:
+        return [i + 1 for i in range(self.slots) if self.value & (1 << i)]
+
+    def __str__(self) -> str:
+        return ','.join([str(v) for v in self.options])
+    
+    @property
+    def status(self) -> CellStatus:
+        match len(self.options):
+            case 0: return CellStatus.EMPTY
+            case 1: return CellStatus.DETERMINED
+            case _: return CellStatus.OPTIONAL
+
+    def set(self, value: int):
+        self.value = value
+    
+    def __iter__(self):
+        for v in self.options:
+            yield v
+    
+    def check_mask(self, mask: int) -> bool:
+        assert 0 < mask < (1 << self.slots), f'Incorrect {mask=} given'
+        return (self.value & ~mask) == 0
+
+
 class SudokuGrid():
     ''' Sudoku grid with m x n block structure '''
 
     def __init__(self, m: int = 3, n: int = 3):
-
-        total = m * n
-        self.dimensions = (total, total)
-        self.values = [_ for _ in range(1, total + 1)]
-        self.grid = [set(self.values) for _ in range(total ** 2)]
-        self.areas = [[map_index([total, 1], [i, j]) for j in range(total)] for i in range(total)]
-        self.areas += [[map_index([total, 1], [i, j]) for i in range(total)] for j in range(total)]
-        self.areas += [[map_index([total * m, n, total, 1], [i, j, r, s]) for r in range(m) for s in range(n)] for i in range(n) for j in range(m)]
-        self.subsets = {i: int2set(i, total) for i in range(1, 1 << total)}
+        
+        self.m = m
+        self.n = n
+        self.slots = m * n
+        self.grid = [GridCell(self.slots) for _ in range(self.slots ** 2)]
+        self.areas = [[map_index([self.slots, 1], [i, j]) for j in range(self.slots)] for i in range(self.slots)]
+        self.areas += [[map_index([self.slots, 1], [i, j]) for i in range(self.slots)] for j in range(self.slots)]
+        self.areas += [[map_index([self.slots * m, n, self.slots, 1], [i, j, r, s]) for r in range(m) for s in range(n)] for i in range(n) for j in range(m)]
     
     def __str__(self) -> str:
 
-        def show_value(val: set[int]) -> str:
-            return str(list(val)[0]) if len(val) == 1 else '·'
+        def show_value(cell: GridCell) -> str:
+            match cell.status:
+                case CellStatus.EMPTY: return '#'
+                case CellStatus.DETERMINED: return str(cell)
+                case _: return '.'
         
-        rows = self.dimensions[0]
+        rows = self.slots
         return '\n'.join([' '.join([show_value(self.grid[map_index([rows, 1], [i, j])]) for j in range(rows)]) for i in range(rows)])
 
     def __repr__(self) -> str:
-        mx = max(len(x) for x in self.grid) + 1
-        d = self.dimensions[0]
-        rows = ['-' * ((mx + 1) * d + 1)]
-        for i in range(d):
+        cells = [str(cell) for cell in self.grid]
+        mx = max(len(cell) for cell in cells)
+        rows = ['-' * ((mx + 1) * self.slots + 1)]
+        for i in range(self.slots):
             vals = ['']
-            for j in range(d):
-                vals += [''.join(str(x) for x in sorted(self.grid[map_index([d, 1], [i, j])])).rjust(mx)]
+            for j in range(self.slots):
+                vals.append(str(self.grid[map_index([self.slots, 1], [i, j])]).rjust(mx))
             rows.append('|'.join(vals) + '|')
-            rows.append('-' * ((mx + 1) * d + 1))
+            rows.append('-' * ((mx + 1) * self.slots + 1))
         return '\n'.join(rows)
 
     @classmethod
     def read_board(cls, shape: tuple[int, int], board: str):
-        assert len(board) == (shape[0] * shape[1]) ** 2, 'Given board does not match to dimensions'
+        cells = board.split(',')
+        assert len(cells) == (shape[0] * shape[1]) ** 2, 'Given board does not match to dimensions'
         grid = cls(shape[0], shape[1])
-        for i, val in enumerate(board):
+        for i, val in enumerate(cells):
             if val != '.':
-                assert (int(val)) in grid.values, f'Given value {val} is out of range'
-                grid.set_values(i // grid.dimensions[0], i % grid.dimensions[0], set([int(val)]))
+                assert 1 <= int(val) <= grid.slots, f'Given value {val} is out of range'
+                grid[i] = GridCell(grid.slots, 1 << (int(val) - 1))
         return grid
-        
     
     @property
     def defined(self) -> list[bool]:
-        return [len(x) == 1 for x in self.grid]
+        return [x.status == CellStatus.DETERMINED for x in self.grid]
     
     @property
     def is_valid(self):
 
         def validate_area(area: list[int]) -> bool:
-            vals = set().union(*[self.grid[i] for i in area])
-            exact_vals = [list(self.grid[i])[0] for i in area if self.defined[i]]
-            return (vals == set(self.values)) & (len(exact_vals) == len(set(exact_vals)))
+            vals = set().union(*[set(self.grid[i].options) for i in area])
+            exact_vals = [str(self.grid[i]) for i in area if self.grid[i].status == CellStatus.DETERMINED]
+            return (vals == set(range(1, self.slots + 1))) & (len(exact_vals) == len(set(exact_vals)))
         
         return all([validate_area(area) for area in self.areas])
 
-    def set_values(self, row: int, col: int, values: set[int]):
-        self.grid[row * self.dimensions[0] + col] = values
+    def __setitem__(self, index: int, value: GridCell):
+        self.grid[index] = value
+
+    def __getitem__(self, index: int) -> GridCell:
+        return self.grid[index]
 
     def reduce_options(self):
         for area in self.areas:
-            for idx in self.subsets:
-                test_set = self.subsets[idx]
-                test_idx = [i for i in area if not (self.grid[i] <= test_set)]
-                if len(test_idx) == (self.dimensions[0] - len(test_set)):
-                    for j in test_idx:
-                        self.grid[j] -= test_set
+            for mask in range(1, 1 << self.slots):
+                masked = [i for i in area if self.grid[i].check_mask(mask)]
+                if len(masked) == mask.bit_count():
+                    for j in area:
+                        if not j in masked:
+                            self.grid[j].set(self.grid[j].value & ~mask)
     
     def simplify(self):
-        options = sum([len(x) for x in self.grid])
+        options = sum([len(x.options) for x in self.grid])
         while True:
             self.reduce_options()
-            new_options = sum([len(x) for x in self.grid])
+            new_options = sum([len(x.options) for x in self.grid])
             if new_options == options:
                 break
             options = new_options
     
     def flatten(self) -> str:
-        if all(self.defined):
-            return ''.join([str(list(cell)[0]) for cell in self.grid])
-        else:
-            return ''
+        return ','.join([str(cell) if cell.status == CellStatus.DETERMINED else '.' for cell in self.grid])
         
 class SudokuSolver():
     ''' Nuff said, just Sudoku solver '''
@@ -108,18 +155,20 @@ class SudokuSolver():
         while not all(self.board.defined):
             for idx in range(len(self.board.grid)):
                 if self.board.defined[idx] == False:
-                    row, col = idx // self.board.dimensions[0], idx % self.board.dimensions[0]
-                    good_set = set()
+                    value = 0
                     for v in self.board.grid[idx]:
-                        new_grid = SudokuGrid(self.block_shape[0], self.block_shape[1])
-                        for i in range(len(self.board.grid)):
-                            new_grid.grid[i] = self.board.grid[i].copy()
-                        new_grid.set_values(row, col, set([v]))
+                        new_grid = SudokuGrid.read_board(self.block_shape, self.board.flatten())
+                        new_grid[idx] = GridCell(new_grid.slots, 1 << (v - 1))
                         new_grid.simplify()
                         if new_grid.is_valid:
                             if all(new_grid.defined):
                                 self.board = new_grid
                                 return
-                            good_set |= {v}
-                    self.board.set_values(row, col, good_set)
+                            value += 1 << (v - 1)
+                    self.board[idx] = GridCell(self.board.slots, value)
                     self.board.simplify()
+
+if __name__ == '__main__':
+    sl = SudokuSolver((3, 3), "4,.,.,.,.,.,.,1,.,.,7,.,.,.,.,.,.,.,.,.,1,.,6,.,.,3,.,2,.,6,8,.,.,1,4,.,.,3,9,4,.,.,2,.,.,.,.,.,.,7,.,.,9,3,.,.,.,.,.,8,4,2,.,3,.,.,.,.,.,.,8,9,8,.,4,.,.,2,.,.,.")
+    sl.solve()
+    print(sl.board)
