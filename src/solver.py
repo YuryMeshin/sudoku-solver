@@ -98,11 +98,7 @@ class SudokuGrid():
                 assert 1 <= int(val) <= grid.slots, f"Given value {val} is out of range"
                 grid[i] = GridCell(grid.slots, 1 << (int(val) - 1))
         return grid
-    
-    @property
-    def defined(self) -> list[bool]:
-        return [x.status == CellStatus.DETERMINED for x in self.grid]
-    
+        
     @property
     def is_valid(self):
 
@@ -118,6 +114,10 @@ class SudokuGrid():
 
     def __getitem__(self, index: int) -> GridCell:
         return self.grid[index]
+    
+    def __iter__(self):
+        for cell in self.grid:
+            yield cell
 
     def reduce_options(self):
         for area in self.areas:
@@ -150,16 +150,16 @@ class SudokuSolver():
     
     def solve(self):
         self.board.simplify()
-        while not all(self.board.defined):
+        while not all(cell.status == CellStatus.DETERMINED for cell in self.board):
             for idx in range(len(self.board.grid)):
-                if self.board.defined[idx] == False:
+                if self.board[idx].status != CellStatus.DETERMINED:
                     value = 0
                     for v in self.board.grid[idx]:
                         new_grid = SudokuGrid.read_board(self.block_shape, self.board.flatten())
                         new_grid[idx] = GridCell(new_grid.slots, 1 << (v - 1))
                         new_grid.simplify()
                         if new_grid.is_valid:
-                            if all(new_grid.defined):
+                            if all(cell.status == CellStatus.DETERMINED for cell in new_grid):
                                 self.board = new_grid
                                 return
                             value += 1 << (v - 1)

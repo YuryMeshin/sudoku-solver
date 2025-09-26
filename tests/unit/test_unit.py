@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 import pytest
-from solver import SudokuSolver
+from solver import SudokuSolver, CellStatus
 
 DATA_PATH = Path(__file__).parent.parent / "unit" / "unit-tests.json"
 with open(DATA_PATH) as f:
@@ -17,4 +17,4 @@ def test(case):
     if expected: 
         assert solved.board.flatten() == expected
     else:
-        assert all(solved.board.defined)
+        assert all(cell.status == CellStatus.DETERMINED for cell in solved.board)
