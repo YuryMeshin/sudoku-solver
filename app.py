@@ -32,7 +32,7 @@ def grid():
             return render_template("grid.html", dimension=dimension, board="".join(solution.split(",")), original=original_cells, solved=True)
         else:
             message = "No solution found!"
-            return render_template("grid.html", dimension=dimension, board=cells, message=message)
+            return render_template("grid.html", dimension=dimension, board=cells, message=message, original=original_cells)
 
     # Blank board for GET request
     blank_board = [""] * board_size
