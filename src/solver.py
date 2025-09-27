@@ -68,7 +68,11 @@ class SudokuGrid():
         self.areas = [[map_index([self.slots, 1], [i, j]) for j in range(self.slots)] for i in range(self.slots)]
         self.areas += [[map_index([self.slots, 1], [i, j]) for i in range(self.slots)] for j in range(self.slots)]
         self.areas += [[map_index([self.slots * m, n, self.slots, 1], [i, j, r, s]) for r in range(m) for s in range(n)] for i in range(n) for j in range(m)]
-        self.is_valid = True
+        self._is_valid = True
+    
+    @property
+    def is_valid(self) -> bool:
+        return self._is_valid
     
     def __str__(self) -> str:
 
@@ -118,7 +122,8 @@ class SudokuGrid():
         ''' Eliminates potential values in given grid cells '''
 
         for area in self.areas:
-            for mask in range(1, 1 << self.slots):
+            masks = set(self.grid[i].bitmask for i in area)
+            for mask in masks:
                 # seeking all cells in area which options belong to certain subset described by bitmask
                 masked = [i for i in area if self.grid[i].check_mask(mask)]
                 if len(masked) == mask.bit_count():
@@ -131,7 +136,7 @@ class SudokuGrid():
                     # if we found more then contradiction found and nothing to do there
                     for j in area:
                         self.grid[j] = GridCell(self.slots, 0)
-                    self.is_valid = False
+                    self._is_valid = False
     
     def simplify(self):
         ''' Reducing potential grid cells options as long as possible '''
