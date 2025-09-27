@@ -1,4 +1,5 @@
-from solver import SudokuSolver, CellStatus
+from structures import CellStatus
+from solver import SudokuSolver
 
 def test_board():
     try:
