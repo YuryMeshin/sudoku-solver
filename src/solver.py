@@ -118,7 +118,8 @@ class SudokuGrid():
         ''' Eliminates potential values in given grid cells '''
 
         for area in self.areas:
-            for mask in range(1, 1 << self.slots):
+            masks = set(self.grid[i].bitmask for i in area)
+            for mask in masks:
                 # seeking all cells in area which options belong to certain subset described by bitmask
                 masked = [i for i in area if self.grid[i].check_mask(mask)]
                 if len(masked) == mask.bit_count():
