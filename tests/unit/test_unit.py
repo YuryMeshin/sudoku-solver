@@ -1,7 +1,8 @@
 import json
 from pathlib import Path
 import pytest
-from solver import SudokuSolver, CellStatus
+from structures import CellStatus
+from solver import SudokuSolver
 
 DATA_PATH = Path(__file__).parent.parent / "unit" / "unit-tests.json"
 with open(DATA_PATH) as f:
