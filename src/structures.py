@@ -1,4 +1,5 @@
 from copy import deepcopy
+from contextlib import contextmanager
 from typing import Optional, Iterator
 from enum import Enum
 
@@ -92,16 +93,9 @@ class SudokuGrid():
         for i in range(self.n):
             for j in range(self.m):
                 self._areas.append(get_block_indices((i * self.m, j * self.n), (self.m, self.n), self.slots)) # add blocks
-
-        self._is_valid = True
+        
         self._status = BoardStatus.OPTIONAL
-    
-    def copy(self) -> "SudokuGrid":
-        return deepcopy(self)
-    
-    @property
-    def is_valid(self) -> bool:
-        return self._is_valid
+        self._total_cells_slots = self.slots ** 3
     
     @property
     def status(self) -> BoardStatus:
@@ -141,29 +135,86 @@ class SudokuGrid():
                 assert 1 <= int(val) <= grid.slots, f"Given value {val} is out of range"
                 grid[i] = GridCell(grid.slots, 1 << (int(val) - 1))
         return grid
-    
-    def _update_board_status(self) -> None:
-        if self._is_valid:
-            if all(cell.status == CellStatus.DETERMINED for cell in self.grid):
-                self._status = BoardStatus.SOLVED
-            else:
-                self._status = BoardStatus.OPTIONAL
-        else:
-            self._status = BoardStatus.CONTRADICTION
 
     def __setitem__(self, index: int, value: GridCell) -> None:
-        assert self.slots == value.slots, f'GridCell with exactly {self.slots} slots expected'        
+        assert self.slots == value.slots, f'GridCell with exactly {self.slots} slots expected'
+        self._total_cells_slots -= self.grid[index].bitmask.bit_count()
+        self._total_cells_slots += value.bitmask.bit_count()
         self.grid[index] = value
-        self._update_board_status()
+
+    def update_status(self) -> None:
+        for area in self._areas: 
+            masks = set(self.grid[i].bitmask for i in area) 
+            if 0 in masks: 
+                self._status = BoardStatus.CONTRADICTION 
+                return 
+            for mask in masks: 
+                masked, unmasked = self._mark_area(area, mask) 
+                if len(masked) > mask.bit_count(): 
+                    self._status = BoardStatus.CONTRADICTION 
+                    return 
+        self._status = BoardStatus.SOLVED if all(cell.status == CellStatus.DETERMINED for cell in self.grid) else BoardStatus.OPTIONAL
 
     def __getitem__(self, index: int) -> GridCell:
         return self.grid[index]
+    
+    def _mark_area(self, area: list[int], mask: int) -> tuple[list[int], list[int]]:
+        masked, unmasked = [], []
+        for i in area:
+            if self.grid[i].check_mask(mask):
+                masked.append(i)
+            else:
+                unmasked.append(i)
+        return masked, unmasked
+    
+    def _update_cells(self, selection: list[int], exclude_mask: int) -> None:
+        for i in selection:
+            self[i] = GridCell(self.slots, self.grid[i].bitmask & ~exclude_mask)
+    
+    def _prune_cell_options(self) -> None:
+
+        for area in self._areas:
+            masks = set(self.grid[i].bitmask for i in area)
+            if 0 in masks:
+                self._status = BoardStatus.CONTRADICTION
+                return 
+            for mask in masks:
+                masked, unmasked = self._mark_area(area, mask)
+                if len(masked) == mask.bit_count():
+                    self._update_cells(unmasked, mask) # eliminate appearances of set of values defined by its btimask
+                elif len(masked) > mask.bit_count():
+                    self._update_cells(area, (1 << self.slots) - 1) # if we found more matching cells then contradiction found
+                    self._status = BoardStatus.CONTRADICTION
+                    return 
+            self._status = BoardStatus.SOLVED if all(cell.status == CellStatus.DETERMINED for cell in self.grid) else BoardStatus.OPTIONAL
+    
+    def narrow_possibilities(self) -> None:
+
+        if self._status == BoardStatus.CONTRADICTION:
+            return # there is nothing to do there, we have found a contradiction
+        
+        options = self._total_cells_slots
+        while True:
+            self._prune_cell_options()
+            if self._status == BoardStatus.CONTRADICTION:
+                return # there is nothing to do there, we have found a contradiction
+            if self._total_cells_slots == options:
+                break
+            options = self._total_cells_slots
     
     def __iter__(self) -> Iterator[GridCell]:
         return iter(self.grid)
     
     def flatten(self) -> str:
-        if self.is_valid:
+        if self._status != BoardStatus.CONTRADICTION:
             return ",".join([str(cell) if cell.status == CellStatus.DETERMINED else "." for cell in self.grid])
         else:
             return ""
+
+    @contextmanager
+    def cloned_board(self):
+        board = deepcopy(self)
+        try:
+            yield board
+        finally:
+            pass

@@ -1,4 +1,4 @@
-from structures import CellStatus
+from structures import BoardStatus
 from solver import SudokuSolver
 
 def test_board():
@@ -7,4 +7,4 @@ def test_board():
         sl.solve()
     except Exception as e:
         assert False, f"Sudoku solving workflow test failed with: {e}"
-    assert all(cell.status == CellStatus.DETERMINED for cell in sl.board), "Sudoku hasn't been solved properly"
+    assert sl.board.status == BoardStatus.SOLVED, "Sudoku hasn't been solved properly"
