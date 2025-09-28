@@ -1,5 +1,18 @@
+from copy import deepcopy
 from typing import Optional, Iterator
 from enum import Enum
+
+
+class CellStatus(Enum):
+    EMPTY = 0
+    DETERMINED = 1
+    OPTIONAL = 2
+
+
+class BoardStatus(Enum):
+    CONTRADICTION = 0
+    OPTIONAL = 1
+    SOLVED = 2
 
 
 def get_block_indices(left_corner: tuple[int, int], block_shape: tuple[int, int], side_len: int) -> list[int]:
@@ -11,12 +24,6 @@ def get_block_indices(left_corner: tuple[int, int], block_shape: tuple[int, int]
     offset = left_corner[0] * side_len + left_corner[1]
     return [offset + r * side_len + c for r in range(block_shape[0]) for c in range(block_shape[1])]
  
-
-class CellStatus(Enum):
-    EMPTY = 0
-    DETERMINED = 1
-    OPTIONAL = 2
-
 
 class GridCell():
     ''' Cell for sudoku grid, represented as bitmask of given slots size '''
@@ -76,27 +83,29 @@ class SudokuGrid():
         self.n = n
         self.slots = m * n
         self.grid: list[GridCell] = [GridCell(self.slots) for _ in range(self.slots ** 2)]
-        
-        self._areas: list[list[int]] = []
-        
-        # add rows
+ 
+        self._areas: list[list[int]] = []        
         for i in range(self.slots):
-            self._areas.append(get_block_indices((i, 0), (1, self.slots), self.slots))
-        
-        # add columns
+            self._areas.append(get_block_indices((i, 0), (1, self.slots), self.slots)) # add rows
         for i in range(self.slots):
-            self._areas.append(get_block_indices((0, i), (self.slots, 1), self.slots))
-        
-        # add blocks
+            self._areas.append(get_block_indices((0, i), (self.slots, 1), self.slots)) # add columns
         for i in range(self.n):
             for j in range(self.m):
-                self._areas.append(get_block_indices((i * self.m, j * self.n), (self.m, self.n), self.slots))
+                self._areas.append(get_block_indices((i * self.m, j * self.n), (self.m, self.n), self.slots)) # add blocks
 
         self._is_valid = True
+        self._status = BoardStatus.OPTIONAL
+    
+    def copy(self) -> "SudokuGrid":
+        return deepcopy(self)
     
     @property
     def is_valid(self) -> bool:
         return self._is_valid
+    
+    @property
+    def status(self) -> BoardStatus:
+        return self._status
     
     def __str__(self) -> str:
 
@@ -133,8 +142,19 @@ class SudokuGrid():
                 grid[i] = GridCell(grid.slots, 1 << (int(val) - 1))
         return grid
     
+    def _update_board_status(self) -> None:
+        if self._is_valid:
+            if all(cell.status == CellStatus.DETERMINED for cell in self.grid):
+                self._status = BoardStatus.SOLVED
+            else:
+                self._status = BoardStatus.OPTIONAL
+        else:
+            self._status = BoardStatus.CONTRADICTION
+
     def __setitem__(self, index: int, value: GridCell) -> None:
+        assert self.slots == value.slots, f'GridCell with exactly {self.slots} slots expected'        
         self.grid[index] = value
+        self._update_board_status()
 
     def __getitem__(self, index: int) -> GridCell:
         return self.grid[index]
